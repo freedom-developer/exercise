@@ -5,6 +5,9 @@
 #include <linux/moduleparam.h>
 #include <linux/uaccess.h>
 #include <linux/mm.h>
+#include <linux/sched.h>
+#include <linux/sched/mm.h>
+#include <linux/mmu_context.h>
 
 unsigned long tsk_user_space_addr = 0x7fff2db60687;
 module_param(tsk_user_space_addr, ulong, 0644);
@@ -55,7 +58,7 @@ void print_paging(struct task_struct *tsk, unsigned long addr)
     print_page((unsigned long *)pgd);
     // 根据线性地址查找pgd表项
     idx = pgd_index(addr);
-    pgd = pgd + idx; // pgd表项
+    pgd = pgd + idx; // pgd表项, == pgd_offset(tsk->mm, addr)
     printk("pgd: idx = %d, val = %lx\n", idx, pgd_val(*pgd));
     // 通过pgd_offset获取pgd表项
     printk("pgd: pgd_offset %lx\n", pgd_val(*(pgd_offset(tsk->mm, addr))));
@@ -103,39 +106,34 @@ void tsk_addr_test(struct task_struct *tsk, unsigned long user_addr)
 {
     printk("tsk_addr_test: user address is %lx\n", user_addr);
 
-    // 获取pgd
+    struct mm_struct *tsk_mm = get_task_mm(tsk);
+    down_read(&tsk_mm->mmap_sem);
+
+    // 获取pgd表项
     pgd_t *pgd = pgd_offset(tsk->mm, user_addr);
-    printk("pgd: %lx\n", pgd_val(*pgd));
+    if (!pgd_present(*pgd)) {
+        void *pud_page = (void *)get_zeroed_page(GFP_KERNEL);
+        // populate pgd
+        set_pgd(pgd, __pgd(__pa(pud_page) | _PAGE_TABLE)); 
+    }
+    printk(KERN_INFO "pgd entry: %lx\n", pgd_val(*pgd));
 
     // 获取pud
-    pud_t *pud;
-    if (!pgd_present(*pgd)) {
-        pud = (pud_t *)get_zeroed_page(GFP_KERNEL);
-        // populate pgd
-        set_pgd(pgd, __pgd(__pa(pud) | _PAGE_TABLE)); 
-    }
-    pud = pud_offset((p4d_t *)pgd, user_addr);
-    printk("pud: %lx\n", pud_val(*pud));
-
-    // 获取pmd
-    pmd_t *pmd;
+    pud_t *pud = pud_offset((p4d_t *)pgd, user_addr);    
     if (!pud_present(*pud)) {
-        pmd = (pmd_t *)get_zeroed_page(GFP_KERNEL);
-        set_pud(pud, __pud(__pa(pmd) | _PAGE_TABLE));
+        void *pmd_page = (void *)get_zeroed_page(GFP_KERNEL);
+        set_pud(pud, __pud(__pa(pmd_page) | _PAGE_TABLE));
     }
-    pmd = pmd_offset(pud, user_addr);
-    printk("pmd: %lx\n", pmd_val(*pmd));
+    printk(KERN_INFO "pud entry: %lx\n", pud_val(*pud));
 
-    // 获取pte
-    pte_t *pte;
+    pmd_t *pmd = pmd_offset(pud, user_addr);
     if (!pmd_present(*pmd)) {
-        pte = (pte_t *)get_zeroed_page(GFP_KERNEL);
-        set_pmd(pmd, __pmd(__pa(pte) | _PAGE_TABLE));
+        void *pte_page = (void *)get_zeroed_page(GFP_KERNEL);
+        set_pmd(pmd, __pmd(__pa(pte_page) | _PAGE_TABLE));
     }
-    pte = pte_offset_map(pmd, user_addr);
-    printk("pte: %lx\n", pte_val(*pte));
+    printk(KERN_INFO "pmd entry: %lx\n", pmd_val(*pmd));
 
-    // 映射物理内存
+    pte_t *pte = pte_offset_map(pmd, user_addr);
     if (!pte_present(*pte)) {
         struct page *page = alloc_page(GFP_KERNEL|__GFP_ZERO);
         if (!page) {
@@ -146,11 +144,21 @@ void tsk_addr_test(struct task_struct *tsk, unsigned long user_addr)
         // set_pte(pte, pfn_pte((unsigned long)(page - (struct page*)0xffd4000000000000UL), (pgprot_t)_PAGE_TABLE));
         set_pte(pte, __pte(__pa(page_address(page)) | _PAGE_TABLE));
     }
-    
-    printk("pte: %lx\n", pte_val(*pte));
+    printk(KERN_INFO "phy page address: %lx\n", pte_val(*pte));
+
+    use_mm(tsk_mm);
+    int val = 1000;
+    printk(KERN_INFO "begin to copy val into user space address\n");
+    if (copy_to_user((void __user *) user_addr, &val, sizeof(int))) {
+        printk(KERN_ERR "copy to user failed\n");
+    }
+
+    unuse_mm(tsk_mm);
+    up_read(&tsk_mm->mmap_sem);
 
     // 通知进程
     send_sig(SIGUSR1, tsk, 0);
+
 }
 
 void paging_test(void)
@@ -173,7 +181,7 @@ void paging_test(void)
     
     tsk_addr_test(tsk, tsk_user_space_addr);
 
-    print_paging(tsk, tsk_user_space_addr);
+    // print_paging(tsk, tsk_user_space_addr);
 }
 
 static int __init demo_init(void)
@@ -183,7 +191,7 @@ static int __init demo_init(void)
     // 打印当前进程名
     printk("current: %s\n", current->comm);
     
-    // paging_test();
+    paging_test();
     
 
     return 0;

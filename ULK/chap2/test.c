@@ -5,7 +5,6 @@
 
 #define POINTER 0x7ffd496e08e0
 
-
 int ch1 = 123;
 int *ch3;
 
