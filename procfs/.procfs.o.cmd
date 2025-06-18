@@ -1032,6 +1032,10 @@ deps_/root/docu/reps/exercise/procfs/procfs.o := \
     $(wildcard include/config/MODULES_USE_ELF_RELA) \
   include/linux/proc_fs.h \
     $(wildcard include/config/PROC_PID_ARCH_STATUS) \
+  include/linux/seq_file.h \
+  include/linux/string_helpers.h \
+  include/linux/ctype.h \
+  include/linux/string_choices.h \
 
 /root/docu/reps/exercise/procfs/procfs.o: $(deps_/root/docu/reps/exercise/procfs/procfs.o)
 
