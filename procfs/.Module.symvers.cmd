@@ -1,1 +1,0 @@
-savedcmd_/root/docu/reps/exercise/procfs/Module.symvers :=  scripts/mod/modpost -M -m -a      -o /root/docu/reps/exercise/procfs/Module.symvers -T /root/docu/reps/exercise/procfs/modules.order -i Module.symvers -e 

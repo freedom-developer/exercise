@@ -24,9 +24,8 @@ static void *ad_start(struct seq_file *m, loff_t *pos)
 
 static void *ad_next(struct seq_file *m, void *v, loff_t *pos)
 {
-    if (*pos >= sizeof(arr_data) / sizeof(int)) reutrn NULL;
-    (*pos)++;
-    return ((int *)v)++;
+    if (*pos >= sizeof(arr_data) / sizeof(int)) return NULL;
+    return (void *)&arr_data[*pos++];
 }
 
 static void ad_stop(struct seq_file *m, void *v)
@@ -36,16 +35,16 @@ static void ad_stop(struct seq_file *m, void *v)
 
 static int ad_show(struct seq_file *m, void *_data)
 {
-    seq_printf("%d\t", *(int *)_data);
+    seq_printf(m, "%d\t", *(int *)_data);
     return 0;
 }
 
 
 struct seq_operations ad_ops = {
-    .seq_start = ad_start,
-    .seq_next = ad_next,
-    .seq_stop = ad_stop,
-    .seq_show = ad_show,
+    .start = ad_start,
+    .next = ad_next,
+    .stop = ad_stop,
+    .show = ad_show,
 };
 
 
