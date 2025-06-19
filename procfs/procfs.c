@@ -3,6 +3,7 @@
 #include <linux/kernel.h>
 #include <linux/proc_fs.h>
 #include <linux/seq_file.h>
+#include <linux/errno.h>
 
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("wushengbang");
@@ -15,17 +16,23 @@ const char *test_name = "test";
 int data;
 const char *test_string = "this is a test string.";
 int arr_data[] = {1, 2, 3, 10, 100, 1000, 3000, 20};
+const char *arr_str[] = {
+    "test1",
+    "test2",
+    "test3",
+};
 
 static void *ad_start(struct seq_file *m, loff_t *pos)
 {
-    *pos = 1;
-    return (void *)&arr_data[0];
+    if (*pos >= sizeof(arr_data) / sizeof(int)) return NULL;
+    return (void *)&arr_data[*pos];
 }
 
 static void *ad_next(struct seq_file *m, void *v, loff_t *pos)
 {
+    (*pos)++;
     if (*pos >= sizeof(arr_data) / sizeof(int)) return NULL;
-    return (void *)&arr_data[*pos++];
+    return (void *)&arr_data[*pos];
 }
 
 static void ad_stop(struct seq_file *m, void *v)
@@ -48,6 +55,32 @@ struct seq_operations ad_ops = {
 };
 
 
+static void *so_start(struct seq_file *m, loff_t *pos)
+{
+    if (*pos >= sizeof(arr_str) / sizeof(char *)) return NULL;
+    return arr_str[*pos];
+}
+static void *so_next(struct seq_file *m, void *v, loff_t *pos)
+{
+    (*pos)++;
+    if (*pos >= sizeof(arr_str) / sizeof(char *)) return NULL;
+    return arr_str[*pos];
+}
+
+static int so_show(struct seq_file *m, void *_data)
+{
+    const char *p = (const char *)_data;
+    seq_printf(m, "%s\t", p);
+    return 0;
+}
+
+struct seq_operations so = {
+    .start = so_start,
+    .next = so_next,
+    .stop = ad_stop,
+    .show = so_show,
+};
+
 // _data 必为NULL
 static int show_single_data(struct seq_file *m, void *_data)
 {
@@ -64,6 +97,42 @@ static int show_single_string(struct seq_file *m, void *_data)
     return 0;
 }
 
+int rw_data;
+struct proc_data_buf {
+    void *buf;
+    size_t size;
+    size_t count;
+};
+
+int rw_data_open(struct inode *inode, struct file *filp)
+{
+    // 准备好数据空间
+    struct proc_data_buf *pdb = kmalloc(sizeof(*pdb), GFP_KERNEL);
+    if (!pdb) return -ENOMEM;
+    
+
+    return 0;
+}
+ssize_t rw_data_read(struct file *filp, char __user *buf, size_t size, loff_t *pos)
+{
+    if (size < )
+
+    char *_buf = kmalloc(10, GFP_KERNEL);
+    if (!_buf) return -ENOMEM;
+    snprintf(_buf, "")
+}
+ssize_t rw_data_write(struct file *filp, const char __user *buf, size_t size, loff_t *pos)
+{
+
+}
+
+struct proc_ops rw_data_ops = {
+    .proc_open = rw_data_open,
+    .proc_read = rw_data_read,
+    .proc_write = rw_data_write,
+    .proc_release = rw_data_release,
+}
+
 static int __init procfs_init(void) {
     printk(KERN_INFO "Hello, kernel world!\n");
     test_pde = proc_mkdir(test_name, NULL);
@@ -78,6 +147,8 @@ static int __init procfs_init(void) {
 
     struct proc_dir_entry *arr_data_pde = proc_create_seq("arr_data", 0444, test_pde, &ad_ops);
     if (!arr_data_pde) return -1;
+
+    struct proc_dir_entry *arr_str_pde = proc_create_seq("arr_str", 0444, test_pde, &so);
 
     return 0;
 }
