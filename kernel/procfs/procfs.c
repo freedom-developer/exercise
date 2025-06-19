@@ -10,6 +10,8 @@ MODULE_AUTHOR("wushengbang");
 MODULE_DESCRIPTION("A simple Linux kernel module");
 MODULE_VERSION("0.1");
 
+#define _min(a, b) (a) < (b) ? (a) : (b)
+
 struct proc_dir_entry *test_pde;
 const char *test_name = "test";
 
@@ -109,16 +111,22 @@ int rw_data_open(struct inode *inode, struct file *filp)
     // 准备好数据空间
     struct proc_data_buf *pdb = kmalloc(sizeof(*pdb), GFP_KERNEL);
     if (!pdb) return -ENOMEM;
+    filp->private_data = pdb;
+    pdb->size = 128;
+    pdb->buf = kmalloc(pdb->size, GFP_KERNEL);
+    if (!pdb->buf) {
+        kfree(pdb);
+        return -ENOMEM;
+    }
+    pdb->count = snprintf(pdb->buf, pdb->size, "%d\n", rw_data);
     
-
     return 0;
 }
 ssize_t rw_data_read(struct file *filp, char __user *buf, size_t size, loff_t *pos)
 {
-    if (size < )
-
-    char *_buf = kmalloc(10, GFP_KERNEL);
-    if (!_buf) return -ENOMEM;
+    struct proc_data_buf *pdb = filp->private_data;
+    size_t copy = _min(pdb->count, size);
+    if (!buf) return 
     snprintf(_buf, "")
 }
 ssize_t rw_data_write(struct file *filp, const char __user *buf, size_t size, loff_t *pos)
