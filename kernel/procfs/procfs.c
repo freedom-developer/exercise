@@ -4,6 +4,7 @@
 #include <linux/proc_fs.h>
 #include <linux/seq_file.h>
 #include <linux/errno.h>
+#include <linux/uaccess.h>
 
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("wushengbang");
@@ -106,7 +107,7 @@ struct proc_data_buf {
     size_t count;
 };
 
-int rw_data_open(struct inode *inode, struct file *filp)
+static int rw_data_open(struct inode *inode, struct file *filp)
 {
     // 准备好数据空间
     struct proc_data_buf *pdb = kmalloc(sizeof(*pdb), GFP_KERNEL);
@@ -122,24 +123,50 @@ int rw_data_open(struct inode *inode, struct file *filp)
     
     return 0;
 }
-ssize_t rw_data_read(struct file *filp, char __user *buf, size_t size, loff_t *pos)
+static ssize_t rw_data_read(struct file *filp, char __user *buf, size_t size, loff_t *pos)
 {
     struct proc_data_buf *pdb = filp->private_data;
-    size_t copy = _min(pdb->count, size);
-    if (!buf) return 
-    snprintf(_buf, "")
+    ssize_t copy = _min(pdb->count - *pos, size);
+    if (!buf) return -EINVAL;
+    if (copy <= 0) return 0;
+    if (copy_to_user(buf, (char *)pdb->buf + *pos, copy))
+        return -EFAULT;
+    *pos += copy;
+    return  copy;
 }
-ssize_t rw_data_write(struct file *filp, const char __user *buf, size_t size, loff_t *pos)
+static ssize_t rw_data_write(struct file *filp, const char __user *buf, size_t size, loff_t *pos)
 {
-
+    struct proc_data_buf *pdb = filp->private_data;
+    ssize_t copy = _min(pdb->size, size);
+    if (!buf) return -EINVAL;
+    if (copy <= 0) return 0;
+    if (copy_from_user(pdb->buf + *pos, buf, copy))
+        return -EFAULT;
+    *pos += copy;
+    pdb->count = *pos;
+    if (sscanf(pdb->buf, "%d", &rw_data) <= 0)
+        return -EINVAL;
+    return copy;
 }
+static int rw_data_release(struct inode *inode, struct file *filp)
+{
+    struct proc_data_buf *pdb = filp->private_data;
+    if (pdb->buf) {
+        kfree(pdb->buf);
+    }
+    kfree(pdb);
+    filp->private_data = NULL;
+    return 0;
+}
+
+
 
 struct proc_ops rw_data_ops = {
     .proc_open = rw_data_open,
     .proc_read = rw_data_read,
     .proc_write = rw_data_write,
     .proc_release = rw_data_release,
-}
+};
 
 static int __init procfs_init(void) {
     printk(KERN_INFO "Hello, kernel world!\n");
@@ -157,6 +184,10 @@ static int __init procfs_init(void) {
     if (!arr_data_pde) return -1;
 
     struct proc_dir_entry *arr_str_pde = proc_create_seq("arr_str", 0444, test_pde, &so);
+    if (!arr_str_pde) return -1;
+
+    struct proc_dir_entry *rw_data_pde = proc_create("rw_data", 0666, test_pde, &rw_data_ops);
+    if (!rw_data_pde) return -1;
 
     return 0;
 }
