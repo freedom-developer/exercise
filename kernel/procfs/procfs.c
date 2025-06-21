@@ -159,13 +159,44 @@ static int rw_data_release(struct inode *inode, struct file *filp)
     return 0;
 }
 
-
-
 struct proc_ops rw_data_ops = {
     .proc_open = rw_data_open,
     .proc_read = rw_data_read,
     .proc_write = rw_data_write,
     .proc_release = rw_data_release,
+};
+
+
+#define RW_STR_LEN 4096
+char rw_str[RW_STR_LEN];
+size_t rw_str_length;
+static int rw_str_open(struct inode *inode, struct file *filp)
+{
+    if (filp->f_flags & O_APPEND)
+        filp->f_pos = rw_str_length;
+    return 0;
+}
+static ssize_t rw_str_read(struct file *filp, char __user *buf, size_t size, loff_t *pos)
+{
+    ssize_t copy = _min(rw_str_length - *pos, size);
+    if (copy <= 0) return 0;
+    if (copy_to_user(buf, rw_str + *pos, copy)) return -EFAULT;
+    *pos += copy;
+    return copy;
+}
+static ssize_t rw_str_write(struct file *filp, const char __user *buf, size_t size, loff_t *pos)
+{
+    ssize_t copy = _min(RW_STR_LEN - *pos, size);
+    if (copy <= 0) return 0;
+    if (copy_from_user(rw_str + *pos, buf, copy)) return -EFAULT;
+    *pos += copy;
+    rw_str_length = *pos;
+    return copy;
+}
+struct proc_ops rw_str_ops = {
+    .proc_open = rw_str_open,
+    .proc_read = rw_str_read,
+    .proc_write = rw_str_write,
 };
 
 static int __init procfs_init(void) {
@@ -188,6 +219,9 @@ static int __init procfs_init(void) {
 
     struct proc_dir_entry *rw_data_pde = proc_create("rw_data", 0666, test_pde, &rw_data_ops);
     if (!rw_data_pde) return -1;
+
+    struct proc_dir_entry *rw_str_pde = proc_create("rw_str", 0666, test_pde, &rw_str_ops);
+    if (!rw_str_pde) return -1;
 
     return 0;
 }
