@@ -62,7 +62,7 @@ constexpr error_category const & system_category() noexcept
 {
     return cat_holder::system_category_instance;
 }
-const error_category const & generic_category() noexcept
+constexpr error_category const & generic_category() noexcept
 {
     return cat_holder::generic_category_instance;
 }

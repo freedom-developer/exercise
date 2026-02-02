@@ -17,6 +17,8 @@ public:
         start_thread(new func<Function>(f));
     }
     ~posix_thread();
+
+    inline void join();
     
 private:
     friend void *posix_thread_function(void *arg);
@@ -48,5 +50,8 @@ private:
     ::pthread_t thread_;
     bool joined_;
 };
+
+
+#include "posix_thread.ipp"
 
 #endif
