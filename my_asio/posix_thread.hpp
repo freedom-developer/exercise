@@ -12,11 +12,15 @@ class posix_thread
 {
 public:
     template<typename Function>
-    posix_thread(Function f, unsigned int  = 0) : joined_(false) 
+    inline posix_thread(Function f, unsigned int  = 0) : joined_(false) 
     {
         start_thread(new func<Function>(f));
     }
-    ~posix_thread();
+    inline ~posix_thread() {
+        if (!joined_) {
+            ::pthread_detach(thread_);
+        }
+    }
 
     inline void join();
     

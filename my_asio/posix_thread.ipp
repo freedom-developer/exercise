@@ -7,7 +7,7 @@ void posix_thread::start_thread(func_base *arg)
         delete arg;
         error_code ec(error, system_category());
         throw(ec);
-    }   
+    }
 }
 
 void *posix_thread_function(void *arg)
