@@ -17,6 +17,8 @@ private:
     } task_operation_; // 一个调度器对象包含一个空操作
     op_queue<operation> op_queue_;
     posix_thread* thread_;
+    bool stopped_;
+    
 };
 
 
