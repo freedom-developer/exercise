@@ -4,8 +4,6 @@
 #include <pthread.h>
 
 
-
-
 inline void *posix_thread_function(void *arg);
 
 class posix_thread 

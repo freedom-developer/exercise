@@ -8,7 +8,7 @@ class error_category
 {
 public:
     error_category( error_category const &) = delete;
-    error_category& operator=(error_category const &) = delete;\
+    error_category& operator=(error_category const &) = delete;
     virtual const char *name() const noexcept = 0;
     virtual std::string message(int ev) const = 0;
     virtual char const * message(int ev, char *buffer, size_t len) const noexcept;
