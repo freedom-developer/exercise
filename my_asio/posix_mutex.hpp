@@ -5,7 +5,9 @@
 
 #include "error_code.hpp"
 
-class posix_event;
+namespace wsb {
+namespace asio {
+
 class posix_mutex
 {
 public:
@@ -30,8 +32,10 @@ public:
         (void)::pthread_mutex_unlock(&mutex_);
     }
 private:
-    friend class posix_event;
     ::pthread_mutex_t mutex_;
 };
+
+} // asio
+} // wsb
 
 #endif

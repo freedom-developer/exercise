@@ -4,6 +4,9 @@
 #include <string>
 #include <cstring>
 
+namespace wsb {
+namespace asio {
+
 class error_category
 {
 public:
@@ -11,7 +14,7 @@ public:
     error_category& operator=(error_category const &) = delete;
     virtual const char *name() const noexcept = 0;
     virtual std::string message(int ev) const = 0;
-    virtual char const * message(int ev, char *buffer, size_t len) const noexcept;
+    virtual char const * message(int ev, char *buffer, size_t len) const noexcept = 0;
 
 protected:
     ~error_category() = default;
@@ -45,26 +48,27 @@ public:
 class system_error_category: public error_category
 {
 public:
-
     constexpr system_error_category() noexcept: error_category( (uint64_t(0x8FAFD21E)<<32) + 0x25C5E09B) {}
     const char *name() const noexcept override { return "system"; }
     inline std::string  message(int ev) const override { return generic_error_category_message(ev); }
     inline char const * message(int ev, char *buffer, size_t len) const noexcept override { return generic_error_category_message(ev, buffer, len); }
 };
 
-struct cat_holder
+template<class T> struct cat_holder
 {
     static constexpr system_error_category system_category_instance{};
     static constexpr generic_error_category generic_category_instance{};
 };
+template<class T> constexpr system_error_category cat_holder<T>::system_category_instance;
+template<class T> constexpr generic_error_category cat_holder<T>::generic_category_instance;
 
 constexpr error_category const & system_category() noexcept
 {
-    return cat_holder::system_category_instance;
+    return cat_holder<void>::system_category_instance;
 }
 constexpr error_category const & generic_category() noexcept
 {
-    return cat_holder::generic_category_instance;
+    return cat_holder<void>::generic_category_instance;
 }
 
 class error_code
@@ -74,10 +78,10 @@ private:
     const error_category * cat_;
 public:
     constexpr error_code() noexcept: val_(0), cat_(&system_category()) {}
-    constexpr error_code(int val, const error_category & cat) noexcept: val_(val), cat_(&cat) {}
-
+    constexpr error_code(int val, const error_category & cat = system_category()) noexcept: val_(val), cat_(&cat) {}
 };
 
-
+} // asio
+} // namespace wsb
 
 #endif

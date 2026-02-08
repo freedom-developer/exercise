@@ -4,6 +4,11 @@
 #include <climits>
 #include <cstddef>
 
+#include "op_queue.hpp"
+
+namespace wsb {
+namespace asio {
+
 class thread_info_base
 {
 public:
@@ -57,12 +62,39 @@ public:
         return pointer;
     }
     
+    static void deallocate(thread_info_base* this_thread, void *pointer, size_t size)
+    {
+        return deallocate(default_tag(), this_thread, pointer, size);
+    }
 
+    template <typename Purpose>
+    static void deallocate(Purpose, thread_info_base* this_thread, void* pointer, size_t size)
+    {
+        if (size <= chunk_size * UCHAR_MAX) {
+            if (this_thread && this_thread->reusable_memory_[Purpose::mem_index] == 0) {
+                unsigned char* const mem = static_cast<unsigned char*>(pointer);
+                mme[0] = mem[size];
+                this_thread->reusable_memory_[Purpose::mem_index] = pointer;
+                return;
+            }
+        }
+        ::operator delete(pointer);
+    }
     
 private:
     enum { chunk_size = 4 };
     enum { max_mem_index = 3 };
     void *reusable_memory_[max_mem_index];
 };
+
+class scheduler_operation;
+struct scheduler_thread_info : public thread_info_base
+{
+    op_queue<scheduler_operation> private_op_queue;
+    long private_outstanding_work;
+};
+
+} // asio
+} // wsb
 
 #endif

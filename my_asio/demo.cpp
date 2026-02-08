@@ -1,7 +1,13 @@
 #include "posix_thread.hpp"
-#include "scheduler.hpp"
+
+#include <iostream>
+
+using namespace std;
+
 int main(void)
 {
-    scheduler sched;
+    wsb::asio::posix_thread pt([]() { cout << "Test posix thread\n"; });
+    pt.join();
+
     return 0;
 }

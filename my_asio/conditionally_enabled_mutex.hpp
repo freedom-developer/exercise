@@ -3,7 +3,8 @@
 
 #include "posix_mutex.hpp"
 
-class conditionally_enabled_event;
+namespace wsb {
+namespace asio {
 
 class conditionally_enabled_mutex
 {
@@ -44,7 +45,6 @@ public:
         posix_mutex& mutex() { return mutex_.mutex_; }
 
     private:
-        friend class conditionally_enabled_event;
         conditionally_enabled_mutex& mutex_;
         bool locked_;
     };
@@ -63,12 +63,14 @@ public:
             mutex_.unlock();
     }
 
-
 private:
     friend class scoped_lock;
     friend class conditionally_enabled_event;
     posix_mutex mutex_;
     const bool enabled_; // const类型
 };
+
+} /// asio
+} // wsb
 
 #endif

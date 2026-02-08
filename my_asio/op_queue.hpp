@@ -1,6 +1,9 @@
 #ifndef WSB_OP_QUEUE_HPP
 #define WSB_OP_QUEUE_HPP
 
+namespace wsb {
+namespace asio {
+
 template <typename Operation>
 class op_queue;
 
@@ -99,5 +102,8 @@ private:
     Operation* front_;
     Operation* back_;
 };
+
+} // asio
+} // wsb
 
 #endif

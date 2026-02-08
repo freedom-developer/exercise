@@ -3,6 +3,9 @@
 
 #include "error_code.hpp"
 
+namespace wsb {
+namespace asio {
+
 // 调度操作对象 就是一个 回调函数
 class scheduler_operation
 {
@@ -28,5 +31,8 @@ private:
     func_type func_;
 };
 
+
+} // asio
+} // wsb
 
 #endif
