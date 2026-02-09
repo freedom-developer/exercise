@@ -45,6 +45,7 @@ public:
         posix_mutex& mutex() { return mutex_.mutex_; }
 
     private:
+        friend class conditionally_enabled_event;
         conditionally_enabled_mutex& mutex_;
         bool locked_;
     };

@@ -6,6 +6,11 @@
 #include "op_queue.hpp"
 #include "conditionally_enabled_mutex.hpp"
 #include "thread_info_base.hpp"
+#include "conditionally_enabled_event.hpp"
+#include "epoll_reactor.hpp"
+
+#include <cstdint>
+#include <atomic>
 
 namespace wsb {
 namespace asio {
@@ -16,9 +21,12 @@ public:
     inline scheduler(): thread_(0), one_thread_(false) {}
     inline ~scheduler() {}
 
-    inline size_t do_run_one(conditionally_enabled_mutex::scoped_lock& lock, scheduler_thread_info& this_thread, const error_code& ec);
 
 private:
+    inline std::size_t do_run_one(conditionally_enabled_mutex::scoped_lock& lock, scheduler_thread_info& this_thread, const error_code& ec);
+
+    struct task_cleanup;
+
     const bool one_thread_;
     struct task_operation : scheduler_operation {
         task_operation() : scheduler_operation(0) {}
@@ -27,7 +35,10 @@ private:
     op_queue<scheduler_operation> op_queue_;
     posix_thread* thread_;
     bool stopped_;
+    conditionally_enabled_event wakeup_event_;
+    std::atomic_long outstanding_work_;
 
+    epoll_reactor* task_;
 };
 
 } // asio

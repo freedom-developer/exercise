@@ -9,6 +9,7 @@ namespace asio {
 
 class posix_event
 {
+public:
     inline posix_event(): state_(0)
     {
         ::pthread_condattr_t attr;
@@ -36,7 +37,7 @@ class posix_event
     void signal_all(Lock& lock)
     {
         static_assert(lock.locked());
-        (void)lock;
+        (void)lock; // 运行时,lock实际未使用，此语句的作用是掏编译器“未使用参数”警告
         state_ |= 1;
         ::pthread_cond_broadcast(&cond_); // 忽略错误，注意此时不能解锁
     }
