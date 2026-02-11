@@ -9,6 +9,7 @@
 #include "timer_queue_set.hpp"
 #include "eventfd_select_interrupter.hpp"
 #include "scheduler.hpp"
+#include "execution_context.hpp"
 
 
 namespace wsb {
@@ -27,7 +28,6 @@ public:
 
     class descriptor_state : scheduler_operation
     {
-    private:
         descriptor_state* next_;
         descriptor_state* prev_;
         conditionally_enabled_mutex mutex_;   
@@ -37,7 +37,8 @@ public:
         op_queue<reactor_op> op_queue_[max_ops];
         bool try_speculative_[max_ops];
         bool shutdown_;
-        inline descriptor_state(bool locking): scheduler_operation(&epoll_reactor::descriptor_state::do_complete), mutex_(locking) {}
+
+        descriptor_state(bool locking): scheduler_operation(&epoll_reactor::descriptor_state::do_complete), mutex_(locking) {}
         void set_ready_events(uint32_t events) { task_result_ = events; }
         void add_ready_events(uint32_t events) { task_result_ |= events; }
         inline scheduler_operation* perform_io(uint32_t events);

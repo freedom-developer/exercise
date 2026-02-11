@@ -5,6 +5,7 @@
 
 #include "error_code.hpp"
 #include "noncopyable.hpp"
+#include "scoped_lock.hpp"
 
 namespace wsb {
 namespace asio {
@@ -12,6 +13,8 @@ namespace asio {
 class posix_mutex : private noncopyable
 {
 public:
+    typedef scoped_lock<posix_mutex> scoped_lock;
+    
     inline posix_mutex()
     {
         int error = ::pthread_mutex_init(&mutex_, 0);
