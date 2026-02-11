@@ -4,14 +4,15 @@
 #include <pthread.h>
 
 #include "error_code.hpp"
+#include "noncopyable.hpp"
 
 namespace wsb {
 namespace asio {
 
-class posix_mutex
+class posix_mutex : private noncopyable
 {
 public:
-    inline posix_mutex::posix_mutex()
+    inline posix_mutex()
     {
         int error = ::pthread_mutex_init(&mutex_, 0);
         if (error != 0) {
@@ -32,6 +33,7 @@ public:
         (void)::pthread_mutex_unlock(&mutex_);
     }
 private:
+    friend class posix_event;
     ::pthread_mutex_t mutex_;
 };
 

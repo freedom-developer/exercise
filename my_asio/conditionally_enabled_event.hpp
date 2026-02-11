@@ -8,7 +8,7 @@
 namespace wsb {
 namespace asio {
     
-class conditionally_enabled_event
+class conditionally_enabled_event : private noncopyable
 {
 public:
     conditionally_enabled_event() {}

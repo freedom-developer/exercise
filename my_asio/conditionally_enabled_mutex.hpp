@@ -6,10 +6,10 @@
 namespace wsb {
 namespace asio {
 
-class conditionally_enabled_mutex
+class conditionally_enabled_mutex : private noncopyable
 {
 public:
-    class scoped_lock
+    class scoped_lock : private noncopyable
     {
     public:
         enum adopt_lock_t { adopt_lock };

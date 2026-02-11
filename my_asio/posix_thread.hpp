@@ -4,13 +4,14 @@
 #include <pthread.h>
 
 #include "error_code.hpp"
+#include "noncopyable.hpp"
 
 namespace wsb {
 namespace asio {
 
 inline void *posix_thread_function(void *arg);
 
-class posix_thread 
+class posix_thread : private noncopyable
 {
 public:
     template<typename Function>

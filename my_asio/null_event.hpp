@@ -23,7 +23,7 @@ public:
     void unlock_and_signal_one(Lock&) {}
 
     template <typename Lock>
-    void maybe_unlock_and_signal_one(Lock&) { return false; }
+    bool maybe_unlock_and_signal_one(Lock&) { return false; }
 
     template <typename Lock>
     void clear(Lock&) {}
