@@ -44,7 +44,7 @@ public:
         inline static void do_complete(void *owner, scheduler_operation* base, const error_code& ec, std::size_t bytes_transfered);
     };
 
-    inline epoll_reactor()
+    inline epoll_reactor();
 private:
     enum { epoll_size = 20000 };
     inline static int do_epoll_create();

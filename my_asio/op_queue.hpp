@@ -13,7 +13,7 @@ public:
     template <typename Operation>
     static Operation* next(Operation *o) 
     {
-        return static_cast<Operation*>(o->next_;);
+        return static_cast<Operation*>(o->next_);
     }
     
     template <typename Operation1, typename Operation2>
@@ -95,7 +95,7 @@ public:
 
     bool empty() const { return front_ == 0; }
 
-    bool is_enqueued(Operation* o) const { return op_queue_access::next(0) != 0 || back_ == o; }
+    bool is_enqueued(Operation* o) const { return op_queue_access::next(o) != 0 || back_ == o; }
 
 private:
     friend class op_queue_access;

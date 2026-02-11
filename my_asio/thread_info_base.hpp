@@ -5,11 +5,12 @@
 #include <cstddef>
 
 #include "op_queue.hpp"
+#include "noncopyable.hpp"
 
 namespace wsb {
 namespace asio {
 
-class thread_info_base
+class thread_info_base : private noncopyable
 {
 public:
     struct default_tag
@@ -48,7 +49,7 @@ public:
         size_t chunks = (size + chunk_size - 1) / chunk_size;
         if (this_thread && this_thread->reusable_memory_[Purpose::mem_index]) {
             void *const pointer = this_thread->reusable_memory_[Purpose::mem_index];
-            this_thread->reusable_memory_[Purpose::mmeindex] = 0;
+            this_thread->reusable_memory_[Purpose::mem_index] = 0;
             unsigned char *const mem = static_cast<unsigned char*>(pointer);
             if (static_cast<size_t>(mem[0]) >= chunks) {
                 mem[size] = mem[0];
@@ -73,7 +74,7 @@ public:
         if (size <= chunk_size * UCHAR_MAX) {
             if (this_thread && this_thread->reusable_memory_[Purpose::mem_index] == 0) {
                 unsigned char* const mem = static_cast<unsigned char*>(pointer);
-                mme[0] = mem[size];
+                mem[0] = mem[size];
                 this_thread->reusable_memory_[Purpose::mem_index] = pointer;
                 return;
             }

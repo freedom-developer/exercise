@@ -1,6 +1,7 @@
 #include "posix_thread.hpp"
 #include "conditionally_enabled_mutex.hpp"
 #include "conditionally_enabled_event.hpp"
+#include "thread_info_base.hpp"
 
 #include <iostream>
 #include <unistd.h>
@@ -17,9 +18,19 @@ wsb_event event;
 void th_func1(void)
 {
     wsb_mtx::scoped_lock lock(mtx);
-    event.wait_for_usec(lock, 2000000);
+    event.wait_for_usec(lock, 2000);
 
     cout << "th_func is running.\n";
+
+    thread_info_base ti_base;
+    for (int i = 0; i < 10; i++) {
+        auto ptr = thread_info_base::allocate(&ti_base, 10);
+        cout << "ptr: " << ptr << endl;
+        auto ptr2 = thread_info_base::allocate(&ti_base, 10);
+        cout << "ptr2: " << ptr2 << endl;
+        thread_info_base::deallocate(&ti_base, ptr, 10);
+        thread_info_base::deallocate(&ti_base, ptr2, 10);
+    }
 }
 
 int main(void)
