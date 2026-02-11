@@ -22,7 +22,7 @@ registered_descriptors_mutex_(mutex_.enabled())
     ev.events = EPOLLIN | EPOLLOUT | EPOLLET;
     ev.data.ptr = &interrupter_;
     epoll_ctl(epoll_fd_, EPOLL_CTL_ADD, interrupter_.read_descriptor(), &ev);
-    interrupter_.interrupt();
+    interrupter_.interrupt(); // 触发interrupter_.read_descriptor()的一个读事件
 
     if (timer_fd_ != -1) {
         ev.events = EPOLLIN | EPOLLERR;
@@ -165,6 +165,128 @@ void epoll_reactor::move_descriptor(int descriptor, descriptor_data& target_data
     source_data = 0;
 }
 
+void epoll_reactor::start_op(int op_type, int descriptor, descriptor_data& data, reactor_op* op, bool is_continuation, bool allow_speculative)
+{
+    if (!data) {
+        op->ec_ = EBADF;
+        post_immediate_completion(op, is_continuation);
+        return;
+    }
+
+    conditionally_enabled_mutex::scoped_lock lock(data->mutex_);
+    if (data->shutdown_) {
+        post_immediate_completion(op, is_continuation);
+        return;
+    }
+
+    if (data->op_queue_[op_type].empty()) {
+        if (allow_speculative && (op_type != read_op || data->op_queue_[except_op].empty())) {
+            if (data->try_speculative_[op_type]) {
+                if (reactor_op::status status = op->perform()) {
+                    if (status == reactor_op::done_and_exhausted)
+                        if (data->registered_events_ != 0)
+                            data->try_speculative_[op_type] = false;
+                    lock.unlock();
+                    scheduler_.post_immediate_completion(op, is_continuation);
+                    return;
+                }
+            }
+
+            if (data->registered_events_ == 0) {
+                op->ec_ = EOPNOTSUPP;
+                scheduler_.post_immediate_completion(op, is_continuation);
+                return;
+            }
+
+            if (op_type == write_op) {
+                if ((data->registered_events_ & EPOLLOUT) == 0) {
+                    epoll_event ev = {0, { 0 } };
+                    ev.events = data->registered_events_ | EPOLLOUT;
+                    ev.data.ptr = data;
+                    if (epoll_ctl(epoll_fd_, EPOLL_CTL_ADD, descriptor, &ev) == 0) {
+                        data->registered_events_ |= ev.events;
+                    } else {
+                        op->ec_ = error_code(errno);
+                        scheduler_.post_immediate_completion(op, is_continuation);
+                        return;
+                    }
+                }
+            }
+        } else if (data->registered_events_ == 0) {
+            op->ec_ = EOPNOTSUPP;
+            scheduler_.post_immediate_completion(op, is_continuation);
+            return;
+        } else {
+            if (op_type == write_op) {
+                data->registered_events_ |= EPOLLOUT;
+            }
+            epoll_event ev = { 0, { 0 } };
+            ev.events = data->registered_events_;
+            ev.data.ptr = data;
+            epoll_ctl(epoll_fd_, EPOLL_CTL_ADD, descriptor, &ev);
+        }
+    }
+    
+    data->op_queue_[op_type].push(op);
+    scheduler_.work_started();
+}
+
+void epoll_reactor::cancel_ops(int descriptor, descriptor_data& data)
+{
+    if (!data) return;
+    conditionally_enabled_mutex::scoped_lock lock(data->mutex_);
+    op_queue<scheduler_operation> ops;
+    for (int i = 0; i < max_ops; ++i) {
+        while (reactor_op* op = data->op_queue_[i].front()) {
+            op->ec_ = ECANCELED;
+            data->op_queue_[i].pop();
+            ops.push(op);
+        }
+    }
+    lock.unlock();
+    scheduler_.post_deferred_completions(ops);
+}
+
+void epoll_reactor::deregister_descriptor(int descriptor, descriptor_data& data, bool closing)
+{
+    if (!data) return;
+    conditionally_enabled_mutex::scoped_lock lock(data->mutex_);
+    if (!data->shutdown_) {
+        if (closing) {
+            // 自动从epoll set中清除
+        } else if (data->registered_events_ != 0) {
+            epoll_event ev = { 0, { 0 } };
+            epoll_ctl(epoll_fd_, EPOLL_CTL_DEL, descriptor, &ev);
+        }
+
+        op_queue<scheduler_operation> ops;
+        for (int i = 0; i < max_ops; ++i) {
+            while (reactor_op* op = data->op_queue_[i].front()) {
+                op->ec_ = ECANCELED;
+                data->op_queue_[i].pop();
+                ops.push(op);
+            }
+        }
+
+        data->descriptor_ = -1;
+        data->shutdown_ = true;
+        lock.unlock();
+        scheduler_.post_deferred_completions(ops);
+    } else {
+        data = 0;
+    }
+}
+
+void epoll_reactor::deregister_internal_descriptor(int descriptor, descriptor_data& data)
+{
+    if (!data) return;
+    conditionally_enabled_mutex::scoped_lock lock(data->mutex_);
+    if (!data->shutdown_) {
+
+    } else {
+        data = 0;
+    }
+}
 
 
 

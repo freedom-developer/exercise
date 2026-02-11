@@ -57,6 +57,17 @@ public:
     inline int register_internal_descriptor(int op_type, int descriptor, descriptor_data& data, reactor_op* op);
     inline void move_descriptor(int descriptor, descriptor_data& target_data, descriptor_data& source_data);
 
+    void post_immediate_completion(reactor_op* op, bool is_continuation)
+    {
+        scheduler_.post_immediate_completion(op, is_continuation);
+    }
+
+    inline void start_op(int op_type, int descriptor, descriptor_data& data, reactor_op* op, bool is_continuation, bool allow_speculative);
+    inline void cancel_ops(int descriptor, descriptor_data& data, bool closing);
+    inline void deregister_descriptor(int descriptor, descriptor_data& data, bool closing);
+    inline void deregister_internal_descriptor(int descriptor, descriptor_data& data);
+
+
 private:
     enum { epoll_size = 20000 };
     inline static int do_epoll_create();
