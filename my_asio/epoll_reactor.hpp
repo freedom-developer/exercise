@@ -28,6 +28,8 @@ public:
 
     class descriptor_state : scheduler_operation
     {
+        friend class epoll_reactor;
+        friend class object_pool_access;
         descriptor_state* next_;
         descriptor_state* prev_;
         conditionally_enabled_mutex mutex_;   
@@ -38,14 +40,23 @@ public:
         bool try_speculative_[max_ops];
         bool shutdown_;
 
-        descriptor_state(bool locking): scheduler_operation(&epoll_reactor::descriptor_state::do_complete), mutex_(locking) {}
+        inline descriptor_state(bool locking);
         void set_ready_events(uint32_t events) { task_result_ = events; }
         void add_ready_events(uint32_t events) { task_result_ |= events; }
         inline scheduler_operation* perform_io(uint32_t events);
         inline static void do_complete(void *owner, scheduler_operation* base, const error_code& ec, std::size_t bytes_transfered);
     };
+    typedef descriptor_state* descriptor_data;
 
-    inline epoll_reactor();
+    inline epoll_reactor(execution_context& ctx);
+    inline ~epoll_reactor();
+    inline void shutdown();
+    inline void notify_fork(execution_context::fork_event fork_ev);
+    inline void init_task();
+    inline int register_descriptor(int descriptor, descriptor_data& data);
+    inline int register_internal_descriptor(int op_type, int descriptor, descriptor_data& data, reactor_op* op);
+    inline void move_descriptor(int descriptor, descriptor_data& target_data, descriptor_data& source_data);
+
 private:
     enum { epoll_size = 20000 };
     inline static int do_epoll_create();
@@ -60,7 +71,7 @@ private:
     
     scheduler& scheduler_;
     conditionally_enabled_mutex mutex_;
-    eventfd_select_interrupter interrutper_;
+    eventfd_select_interrupter interrupter_;
     int epoll_fd_;
     int timer_fd_;
     timer_queue_set timer_queues_;
@@ -68,7 +79,7 @@ private:
     conditionally_enabled_mutex registered_descriptors_mutex_;
     object_pool<descriptor_state> registered_descriptors_;
     struct perform_io_cleanup_on_block_exit;
-    friend struct perform_io_clueanup_on_block_exit;
+    friend struct perform_io_cleanup_on_block_exit;
 };
 
 }
