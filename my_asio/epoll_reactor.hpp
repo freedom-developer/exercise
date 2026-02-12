@@ -36,7 +36,7 @@ public:
         epoll_reactor* reactor_;
         int descriptor_;
         uint32_t registered_events_;
-        op_queue<reactor_op> op_queue_[max_ops];
+        op_queue<reactor_op> op_queue_[max_ops]; // 每个描述符有3个操作队列，读、写、异常
         bool try_speculative_[max_ops];
         bool shutdown_;
 
@@ -63,7 +63,7 @@ public:
     }
 
     inline void start_op(int op_type, int descriptor, descriptor_data& data, reactor_op* op, bool is_continuation, bool allow_speculative);
-    inline void cancel_ops(int descriptor, descriptor_data& data, bool closing);
+    inline void cancel_ops(int descriptor, descriptor_data& data);
     inline void deregister_descriptor(int descriptor, descriptor_data& data, bool closing);
     inline void deregister_internal_descriptor(int descriptor, descriptor_data& data);
 
