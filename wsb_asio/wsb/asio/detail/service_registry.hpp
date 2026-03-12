@@ -24,11 +24,28 @@ public:
 private:
     template <typename Service>
     static void init_key(execution_context::service::key& key, ...);
-
     
     inline static void init_key_from_id(execution_context::service::key& key, const execution_context::id& id);
 
+    inline static bool keys_match(const execution_context::service::key& key1, const execution_context::service::key& key2);
+
+    typedef execution_context::service*(*factory_type)(void*);
+
+    template <typename Service, typename Owner>
+    static execution_context::service* create(void *owner);
+
     inline static void destroy(execution_context::service* service);
+
+    struct auto_service_ptr;
+    friend struct auto_service_ptr;
+    struct auto_service_ptr {
+        execution_context::service* ptr_;
+        ~auto_service_ptr() { destroy(ptr_); }
+    };
+
+    inline execution_context::service* do_use_service(const execution_context::service::key& key, factory_type factory, void *owner);
+    inline void do_add_service(const execution_context::service::key& key, execution_context::service* new_service);
+
 
     posix_mutex mutex_;
     execution_context& owner_;

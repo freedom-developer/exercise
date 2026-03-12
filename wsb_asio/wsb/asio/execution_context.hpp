@@ -47,7 +47,7 @@ protected:
 private:
     friend class detail::service_registry;
     virtual void shutdown() = 0;
-    inline virtual void notify_fork(execution_context::fork_event event);
+    inline virtual void notify_fork(execution_context::fork_event event) = 0;
     struct key
     {
         key() : type_info_(0), id_(0) {}

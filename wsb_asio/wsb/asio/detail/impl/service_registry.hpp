@@ -13,6 +13,12 @@ inline void service_registry::init_key(execution_context::service::key& key, ...
     init_key_from_id(key, Service::id);
 }
 
+template <typename Service, typename Owner>
+execution_context::service* service_registry::create(void *owner)
+{
+    return new Service(*static_cast<Owner*>(owner));
+}
+
 }
 }
 }

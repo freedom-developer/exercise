@@ -21,7 +21,6 @@ execution_context::~execution_context()
 
 execution_context::service::service(execution_context& owner) : owner_(owner), next_(0) {}
 execution_context::service::~service() {}
-void execution_context::service::notify_fork(execution_context::fork_event) {}
 
 }
 }

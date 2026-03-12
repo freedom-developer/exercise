@@ -12,7 +12,7 @@ namespace detail {
 
 class posix_mutex : private noncopyable {
 public:
-    typedef wsb::asio::detail::scoped_lcok<posix_mutex> scoped_lcok;
+    typedef wsb::asio::detail::scoped_lock<posix_mutex> scoped_lock;
     inline posix_mutex() 
     {
         int error = ::pthread_mutex_init(&mutex_, 0);
