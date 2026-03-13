@@ -14,7 +14,7 @@ class scheduler : public wsb::asio::execution_context_service_base<scheduler>, p
 public:
     inline scheduler(execution_context& ctx, int concurrency_hint, bool own_thread);
 
-    inline void shutdown();
+    inline void shutdown(); // 必须实现此虚函数
 
 private:
     const bool one_thread_;

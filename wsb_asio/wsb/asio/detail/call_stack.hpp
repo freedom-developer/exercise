@@ -63,7 +63,6 @@ public:
         return elem ? elem->value_ : 0;
     }
 
-
 private:
     static tss_ptr<context> top_;
 };

@@ -18,7 +18,7 @@ private:
 
     inline detail::scheduler& add_impl(detail::scheduler* impl);
 
-    detail::scheduler& impl_;
+    detail::scheduler& impl_; // 一种服务，由execution_context管理
 
     
 };
