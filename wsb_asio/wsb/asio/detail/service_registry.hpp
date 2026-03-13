@@ -42,7 +42,7 @@ private:
     typedef execution_context::service*(*factory_type)(void*);
 
     template <typename Service, typename Owner>
-    static execution_context::service* create(void *owner);
+    static execution_context::service* create(void *owner); // 以owner为参数构建一个Service对象
 
     inline static void destroy(execution_context::service* service);
 

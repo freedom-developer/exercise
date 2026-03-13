@@ -10,7 +10,7 @@ namespace detail {
 template <typename Service>
 inline void service_registry::init_key(execution_context::service::key& key, ...)
 {
-    init_key_from_id(key, Service::id);
+    init_key_from_id(key, Service::id); // Service必须有一个静态变量id
 }
 
 template <typename Service, typename Owner>
