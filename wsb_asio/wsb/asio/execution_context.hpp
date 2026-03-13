@@ -6,6 +6,8 @@
 namespace wsb {
 namespace asio {
 
+class io_context;
+
 namespace detail {
 
 class service_registry;
@@ -23,8 +25,26 @@ public:
 
 public:
     enum fork_event { fork_prepare, fork_parent, fork_child };
+    inline void notify_fork(fork_event ev);
+
+    template <typename Service>
+    friend Service& use_service(execution_context& e);
+
+    template <typename Service>
+    friend Service& use_service(io_context& ioc);
+
+    template <typename Service, typename... Args>
+    friend Service& make_service(execution_context&e, Args&&... args);
+
+    template <typename Service>
+    friend void add_service(execution_context& e, Service* svc);
+
+    template <typename Service>
+    friend bool has_service(execution_context& e);
 
 protected:
+    inline void shutdown();
+    inline void destroy();
 
 private:
     detail::service_registry* service_registry_;
@@ -47,7 +67,7 @@ protected:
 private:
     friend class detail::service_registry;
     virtual void shutdown() = 0;
-    inline virtual void notify_fork(execution_context::fork_event event) = 0;
+    inline virtual void notify_fork(execution_context::fork_event event) {}
     struct key
     {
         key() : type_info_(0), id_(0) {}
@@ -59,9 +79,25 @@ private:
     service* next_;
 };
 
+template <typename Type>
+class service_id : public execution_context::id {
+
+};
+
+template <typename Type>
+class execution_context_service_base : public execution_context::service {
+public:
+    static service_id<Type> id;
+    execution_context_service_base(execution_context& e) : execution_context::service(e) {}
+};
+
+template <typename Type>
+service_id<Type> execution_context_service_base<Type>::id;
+
 }
 }
 
+#include <wsb/asio/impl/execution_context.hpp>
 #include <wsb/asio/impl/execution_context.ipp>
 
 #endif

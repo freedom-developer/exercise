@@ -4,6 +4,7 @@
 #include <wsb/asio/detail/noncopyable.hpp>
 #include <wsb/asio/execution_context.hpp>
 #include <wsb/asio/detail/posix_mutex.hpp>
+#include <wsb/asio/io_context.hpp>
 
 namespace wsb {
 namespace asio {
@@ -20,6 +21,15 @@ public:
 
     template <typename Service>
     Service& use_service();
+
+    template <typename Service>
+    Service& use_service(io_context& owner);
+
+    template <typename Service>
+    void add_service(Service* new_service);
+
+    template <typename Service>
+    bool has_service() const;
 
 private:
     template <typename Service>
@@ -45,9 +55,10 @@ private:
 
     inline execution_context::service* do_use_service(const execution_context::service::key& key, factory_type factory, void *owner);
     inline void do_add_service(const execution_context::service::key& key, execution_context::service* new_service);
+    inline bool do_has_service(const execution_context::service::key& key) const;
 
 
-    posix_mutex mutex_;
+    mutable posix_mutex mutex_;
     execution_context& owner_;
     execution_context::service* first_service_;
 
@@ -57,6 +68,7 @@ private:
 }
 }
 
+#include <wsb/asio/detail/impl/service_registry.hpp>
 #include <wsb/asio/detail/impl/service_registry.ipp>
 
 #endif

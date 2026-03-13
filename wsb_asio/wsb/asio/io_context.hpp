@@ -3,6 +3,7 @@
 
 #include <cstddef>
 #include <wsb/asio/execution_context.hpp>
+#include <wsb/asio/detail/scheduler.hpp>
 
 namespace wsb {
 namespace asio {
@@ -12,6 +13,14 @@ public:
     inline io_context();
     inline ~io_context();
     inline std::size_t run();
+
+private:
+
+    inline detail::scheduler& add_impl(detail::scheduler* impl);
+
+    detail::scheduler& impl_;
+
+    
 };
 
 }

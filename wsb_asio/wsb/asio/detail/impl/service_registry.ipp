@@ -4,6 +4,7 @@
 #include <wsb/asio/detail/service_registry.hpp>
 
 #include <vector>
+#include <stdexcept>
 
 namespace wsb {
 namespace asio {
@@ -57,12 +58,7 @@ void service_registry::notify_fork(execution_context::fork_event fork_ev)
             services[i - 1]->notify_fork(fork_ev);
 }
 
-template <typename Service>
-Service& service_registry::use_service()
-{
-    execution_context::service::key key;
-    init_key<Service>(key, 0);
-}
+
 
 void service_registry::init_key_from_id(execution_context::service::key& key, const execution_context::id& id)
 {
@@ -119,25 +115,40 @@ void service_registry::do_add_service(
     const execution_context::service::key& key,
     execution_context::service* new_service)
 {
-  if (&owner_ != &new_service->context())
-    boost::asio::detail::throw_exception(invalid_service_owner());
+    if (&owner_ != &new_service->context()) 
+        throw(std::logic_error("Invalid service owner"));
+    
+    posix_mutex::scoped_lock lock(mutex_);
 
-  posix_mutex::scoped_lock lock(mutex_);
+    // Check if there is an existing service object with the given key.
+    execution_context::service* service = first_service_;
+    while (service) {
+        if (keys_match(service->key_, key))
+            throw(std::logic_error("Service already exists"));
+        service = service->next_;
+    }
 
-  // Check if there is an existing service object with the given key.
-  execution_context::service* service = first_service_;
-  while (service)
-  {
-    if (keys_match(service->key_, key))
-      boost::asio::detail::throw_exception(service_already_exists());
-    service = service->next_;
-  }
-
-  // Take ownership of the service object.
-  new_service->key_ = key;
-  new_service->next_ = first_service_;
-  first_service_ = new_service;
+    // Take ownership of the service object.
+    new_service->key_ = key;
+    new_service->next_ = first_service_;
+    first_service_ = new_service;
 }
+
+bool service_registry::do_has_service(const execution_context::service::key& key) const
+{
+    posix_mutex::scoped_lock lock(mutex_);
+
+    execution_context::service* service = first_service_;
+    while (service) {
+        if (keys_match(service->key_, key))
+            return true;
+        service = service->next_;
+    }
+
+  return false;
+}
+
+
 
 }
 }

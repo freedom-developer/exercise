@@ -19,6 +19,42 @@ execution_context::service* service_registry::create(void *owner)
     return new Service(*static_cast<Owner*>(owner));
 }
 
+template <typename Service>
+Service& service_registry::use_service()
+{
+    execution_context::service::key key;
+    init_key<Service>(key, 0);
+    factory_type factory = &service_registry::create<Service, execution_context>;
+    return *static_cast<Service*>(do_use_service(key, factory, &owner_));
+}
+
+template <typename Service>
+Service& service_registry::use_service(io_context& owner)
+{
+    execution_context::service::key key;
+    init_key<Service>(key, 0);
+    factory_type factory = &service_registry::create<Service, io_context>;
+    return *static_cast<Service*>(do_use_service(key, factory, &owner));
+}
+
+template <typename Service>
+void service_registry::add_service(Service* new_service)
+{
+    execution_context::service::key key;
+    init_key<Service>(key, 0);
+    return do_add_service(key, new_service);
+}
+
+template <typename Service>
+bool service_registry::has_service() const
+{
+  execution_context::service::key key;
+  init_key<Service>(key, 0);
+  return do_has_service(key);
+}
+
+
+
 }
 }
 }
