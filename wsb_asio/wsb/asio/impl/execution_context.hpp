@@ -33,7 +33,7 @@ inline Service& use_service(io_context& ioc)
 template <typename Service, typename... Args>
 Service& make_service(execution_context& e, Args&&... args)
 {
-    detail::scoped_ptr ptr(new Service(e, static_cast<Args&&>(args)...));
+    detail::scoped_ptr<Service> ptr(new Service(e, static_cast<Args&&>(args)...));
     e.service_registry_->template add_service<Service>(ptr.get());
     Service& result = *ptr;
     ptr.release();

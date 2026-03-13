@@ -87,10 +87,18 @@ public:
 };
 
 namespace detail {
+
+// 声明
 template<class T> struct cat_holder {
     static constexpr system_error_category system_category_instance{};
     static constexpr generic_error_category generic_category_instance{};
 };
+
+// 定义
+template<class T> constexpr system_error_category cat_holder<T>::system_category_instance;
+template<class T> constexpr generic_error_category cat_holder<T>::generic_category_instance;
+
+
 }
 
 constexpr error_category const & system_category() noexcept

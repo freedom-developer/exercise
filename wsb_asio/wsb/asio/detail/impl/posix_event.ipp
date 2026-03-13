@@ -3,6 +3,7 @@
 
 #include <wsb/asio/detail/posix_event.hpp>
 #include <wsb/system/error_code.hpp>
+#include <exception>
 
 namespace wsb {
 namespace asio {
@@ -15,8 +16,10 @@ posix_event::posix_event() : state_(0)
     int error = ::pthread_condattr_setclock(&attr, CLOCK_MONOTONIC);
     if (error == 0)
         error = ::pthread_cond_init(&cond_, &attr);
-    if (error)
-        throw(wsb::system::error_code(error, wsb::system::system_category()));
+    if (error) {
+        wsb::system::error_code ec(error, wsb::system::system_category());
+        throw(ec);
+    }
 }
 
 }
