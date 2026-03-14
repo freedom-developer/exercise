@@ -8,6 +8,8 @@ namespace wsb {
 namespace asio {
 namespace detail {
 
+class conditionally_enabled_event;
+
 class conditionally_enabled_mutex : private noncopyable {
 public:
     class scoped_lock : private noncopyable {
@@ -47,9 +49,15 @@ public:
             }
         }
 
+        bool locked() const
+        {
+            return locked_;
+        }
+
         posix_mutex& mutex() { return mutex_.mutex_; }
 
     private:
+        friend class conditionally_enabled_event;
         conditionally_enabled_mutex& mutex_;
         bool locked_;
     };
@@ -71,6 +79,7 @@ public:
 
 private:
     friend class scoped_lock;
+    friend class conditionally_enabled_event;
 
     posix_mutex mutex_;
     const bool enabled_;

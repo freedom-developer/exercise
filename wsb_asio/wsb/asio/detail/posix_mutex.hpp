@@ -10,6 +10,8 @@ namespace wsb {
 namespace asio {
 namespace detail {
 
+class conditionally_enabled_event;
+
 class posix_mutex : private noncopyable {
 public:
     typedef wsb::asio::detail::scoped_lock<posix_mutex> scoped_lock;
@@ -31,6 +33,8 @@ public:
     void unlock() { ::pthread_mutex_unlock(&mutex_); }
 
 private:
+    friend class posix_event;
+
     ::pthread_mutex_t mutex_;
 };
 

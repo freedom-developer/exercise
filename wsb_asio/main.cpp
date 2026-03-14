@@ -1,4 +1,5 @@
 #include <wsb/asio.hpp>
+#include <iostream>
 
 using namespace wsb::asio;
 

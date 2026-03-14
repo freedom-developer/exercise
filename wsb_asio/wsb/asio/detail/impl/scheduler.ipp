@@ -20,6 +20,11 @@ void scheduler::shutdown()
     
 }
 
+void post_deferred_completions(op_queue<scheduler_operation>& ops)
+{
+
+}
+
 }
 }
 }

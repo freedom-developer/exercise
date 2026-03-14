@@ -5,6 +5,7 @@
 #include <wsb/asio/detail/thread_context.hpp>
 #include <wsb/asio/detail/conditionally_enabled_mutex.hpp>
 #include <wsb/asio/detail/conditionally_enabled_event.hpp>
+#include <wsb/asio/detail/epoll_reactor.hpp>
 
 namespace wsb {
 namespace asio {
@@ -16,10 +17,15 @@ public:
 
     inline void shutdown(); // 必须实现此虚函数
 
+    inline void post_deferred_completions(op_queue<scheduler_operation>& ops);
+
+    inline void compensating_work_started();
+
 private:
     const bool one_thread_;
     mutable conditionally_enabled_mutex mutex_;
     conditionally_enabled_event wakeup_event_;
+    epoll_reactor* task_;
 };
 
 }
