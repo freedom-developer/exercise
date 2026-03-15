@@ -5,11 +5,14 @@
 #include <wsb/asio/detail/thread_context.hpp>
 #include <wsb/asio/detail/conditionally_enabled_mutex.hpp>
 #include <wsb/asio/detail/conditionally_enabled_event.hpp>
-#include <wsb/asio/detail/epoll_reactor.hpp>
+#include <wsb/asio/detail/op_queue.hpp>
+#include <wsb/asio/detail/scheduler_operation.hpp>
 
 namespace wsb {
 namespace asio {
 namespace detail {
+
+class epoll_reactor;
 
 class scheduler : public wsb::asio::execution_context_service_base<scheduler>, public thread_context {
 public:

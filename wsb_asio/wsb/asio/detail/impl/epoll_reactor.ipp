@@ -2,7 +2,7 @@
 #define WSB_ASIO_DETAIL_EPOLL_REACTOR_IPP
 
 #include <wsb/asio/detail/epoll_reactor.hpp>
-#include <wsb/asio/detail/scheduler.hpp>
+#include <wsb/system/error_code.hpp>
 
 #include <sys/epoll.h>
 
@@ -10,8 +10,36 @@ namespace wsb {
 namespace asio {
 namespace detail {
 
+epoll_reactor::epoll_reactor(wsb::asio::execution_context& ctx)
+: execution_context_service_base<epoll_reactor>(ctx),
+mutex_(true),
+scheduler_(use_service<scheduler>(ctx)),
+epoll_fd_(do_epoll_create())
+{
 
+}
 
+int epoll_reactor::do_epoll_create()
+{
+#ifdef EPOLL_CLOEXEC
+    int fd = epoll_create1(EPOLL_CLOEXEC);
+#else
+    fd = -1;
+    errno = EINVAL;
+#endif
+    if (fd == -1 && (errno == EINVAL || ENOSYS)) {
+        fd = epoll_create(epoll_size);
+        if (fd != -1)
+            ::fcntl(fd, F_SETFD, FD_CLOEXEC);
+    }
+
+    if (fd == -1) {
+        wsb::system::error_code ec(errno, wsb::system::system_category());
+        throw(ec);
+    }
+
+    return fd;
+}
 
 struct epoll_reactor::perform_io_cleanup_on_block_exit {
     explicit perform_io_cleanup_on_block_exit(epoll_reactor* r) : reactor_(r), first_op_(0) {}
@@ -69,7 +97,8 @@ void epoll_reactor::descriptor_state::do_complete(void *owner, scheduler_operati
     }
 }
 
-epoll_reactor::descriptor_state::descriptor_state(bool locking) : scheduler_operation(&epoll_reactor::descriptor_state::do_complete), mutex_(locking) {}
+epoll_reactor::descriptor_state::descriptor_state(bool locking) : 
+scheduler_operation(&epoll_reactor::descriptor_state::do_complete), mutex_(locking) {}
 
 }
 }

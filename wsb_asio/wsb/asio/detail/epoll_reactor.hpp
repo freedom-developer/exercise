@@ -6,6 +6,7 @@
 #include <wsb/asio/detail/timer_queue_set.hpp>
 #include <wsb/asio/detail/object_pool.hpp>
 #include <wsb/asio/detail/reactor_op.hpp>
+#include <wsb/asio/detail/scheduler.hpp>
 
 namespace wsb {
 namespace asio {
@@ -37,11 +38,19 @@ public:
         inline static void do_complete(void* owner, scheduler_operation* base, const wsb::system::error_code& ec, std::size_t bytes_transferred);
     };
 
+    typedef descriptor_state* per_descriptor_data;
+    
+    inline epoll_reactor(wsb::asio::execution_context& ctx);
+
+    inline ~epoll_reactor();
+
 
 private:
     enum { epoll_size = 20000 };
 
-    class scheduler;
+    inline static int do_epoll_create();
+
+    // 修改这里：使用detail命名空间中的scheduler，而不是前向声明嵌套类
     scheduler& scheduler_;
     
     conditionally_enabled_mutex mutex_;

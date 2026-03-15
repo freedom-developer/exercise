@@ -20,9 +20,14 @@ void scheduler::shutdown()
     
 }
 
-void post_deferred_completions(op_queue<scheduler_operation>& ops)
+void scheduler::post_deferred_completions(op_queue<scheduler_operation>& ops)
 {
 
+}
+
+void scheduler::compensating_work_started()
+{
+    
 }
 
 }
