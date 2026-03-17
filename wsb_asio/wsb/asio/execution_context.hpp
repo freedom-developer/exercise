@@ -95,6 +95,15 @@ public:
 template <typename Type>
 service_id<Type> execution_context_service_base<Type>::id;
 
+
+template <typename Type>
+class execution_context_service_base : public execution_context::service {
+public:
+    static service_id<Type> id;
+
+    execution_context_service_base(execution_context& e) : execution_context::service(e) {}
+};
+
 }
 }
 
