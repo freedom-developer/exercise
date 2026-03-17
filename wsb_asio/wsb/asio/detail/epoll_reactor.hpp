@@ -44,11 +44,16 @@ public:
 
     inline ~epoll_reactor();
 
+    inline void interrupt();
+
 
 private:
     enum { epoll_size = 20000 };
 
     inline static int do_epoll_create();
+    inline static int do_timerfd_create();
+
+    inline per_descriptor_data allocate_descriptor_state();
 
     // 修改这里：使用detail命名空间中的scheduler，而不是前向声明嵌套类
     scheduler& scheduler_;

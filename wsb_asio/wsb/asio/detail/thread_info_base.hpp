@@ -4,7 +4,7 @@
 #include <wsb/asio/detail/noncopyable.hpp>
 
 #include <exception>
-#include <limits>
+#include <climits>
 
 namespace wsb {
 namespace asio {
@@ -52,7 +52,7 @@ public:
             void* const pointer = this_thread->reusable_memory_[Purpose::mem_index];
             this_thread->reusable_memory_[Purpose::mem_index] = 0;
             unsigned char* const mem = static_cast<unsigned char*>(pointer);
-            if (static_cast<std::size_t>(mem[0])) >= chunks) {
+            if ((static_cast<std::size_t>(mem[0])) >= chunks) {
                 mem[size] = mem[0]; // 最后一个字节保存所分配的块
                 return pointer;
             }

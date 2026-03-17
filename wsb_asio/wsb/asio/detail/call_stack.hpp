@@ -64,6 +64,7 @@ public:
     }
 
 private:
+    friend class context;
     static tss_ptr<context> top_;
 };
 

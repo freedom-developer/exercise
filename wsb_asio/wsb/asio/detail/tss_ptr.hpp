@@ -8,7 +8,7 @@ namespace asio {
 namespace detail {
 
 template <typename T>
-class tss_ptr : keyword_tss_ptr<T> {
+class tss_ptr : public keyword_tss_ptr<T> {
 public:
     void operator=(T* value)
     {

@@ -17,7 +17,9 @@ io_context::~io_context()
 
 std::size_t io_context::run()
 {
-
+    wsb::system::error_code ec;
+    std::size_t s = impl_.run(ec);
+    throw(ec);
     return 0;
 }
 

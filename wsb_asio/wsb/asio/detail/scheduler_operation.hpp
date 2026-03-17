@@ -14,7 +14,7 @@ public:
         func_(owner, this, ec, bytes_transferred);
     }
 
-    void desetroy()
+    void destroy()
     {
         func_(0, this, wsb::system::error_code(), 0);
     }

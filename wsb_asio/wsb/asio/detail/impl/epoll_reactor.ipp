@@ -5,6 +5,7 @@
 #include <wsb/system/error_code.hpp>
 
 #include <sys/epoll.h>
+#include <sys/timerfd.h>
 
 namespace wsb {
 namespace asio {
@@ -12,11 +13,35 @@ namespace detail {
 
 epoll_reactor::epoll_reactor(wsb::asio::execution_context& ctx)
 : execution_context_service_base<epoll_reactor>(ctx),
-mutex_(true),
 scheduler_(use_service<scheduler>(ctx)),
-epoll_fd_(do_epoll_create())
+mutex_(true),
+interrupter_(),
+epoll_fd_(do_epoll_create()),
+timer_fd_(do_timerfd_create()),
+shutdown_(false),
+registered_descriptors_mutex_(mutex_.enabled())
 {
+    // 将interrupter_.read_descriptor()添加到epfd
+    epoll_event ev = { 0, { 0 } };
+    ev.events = EPOLLIN | EPOLLERR | EPOLLET;
+    ev.data.ptr = &interrupter_;
+    epoll_ctl(epoll_fd_, EPOLL_CTL_ADD, interrupter_.read_descriptor(), &ev);
+    interrupter_.interrupt(); // 向interrupt_.write_descriptor()中写入一个1
 
+    // 将timerfd添加到epfd
+    if (timer_fd_ != -1) {
+        ev.events = EPOLLIN | EPOLLERR; 
+        ev.data.ptr = &timer_fd_;
+        epoll_ctl(epoll_fd_, EPOLL_CTL_ADD, timer_fd_, &ev);
+    }
+}
+
+epoll_reactor::~epoll_reactor()
+{
+    if (epoll_fd_ != -1)
+        close(epoll_fd_);
+    if (timer_fd_)
+        close(epoll_fd_);
 }
 
 int epoll_reactor::do_epoll_create()
@@ -39,6 +64,31 @@ int epoll_reactor::do_epoll_create()
     }
 
     return fd;
+}
+
+int epoll_reactor::do_timerfd_create()
+{
+    int fd = timerfd_create(CLOCK_MONOTONIC, TFD_CLOEXEC);
+    if (fd == -1 && errno == EINVAL) {
+        fd = timerfd_create(CLOCK_MONOTONIC, 0);
+        if (fd != -1)
+            ::fcntl(fd, F_SETFD, FD_CLOEXEC);
+    }
+    return fd;
+}
+
+epoll_reactor::per_descriptor_data epoll_reactor::allocate_descriptor_state()
+{
+  conditionally_enabled_mutex::scoped_lock descriptors_lock(registered_descriptors_mutex_);
+  return registered_descriptors_.alloc(true);
+}
+
+void epoll_reactor::interrupt()
+{
+    epoll_event ev = { 0, { 0 } };
+    ev.events = EPOLLIN | EPOLLERR | EPOLLET;
+    ev.data.ptr = &interrupter_;
+    epoll_ctl(epoll_fd_, EPOLL_CTL_ADD, interrupter_.read_descriptor(), &ev);
 }
 
 struct epoll_reactor::perform_io_cleanup_on_block_exit {
