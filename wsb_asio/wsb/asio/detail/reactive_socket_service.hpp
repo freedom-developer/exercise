@@ -10,7 +10,7 @@ namespace detail {
 template <typename Protocol>
 class reactive_socket_service : public execution_context_service_base<reactive_socket_service<Protocol>>, public reactive_socket_service_base {
 public:
-    
+
 private:
 
 };
