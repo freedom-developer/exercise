@@ -5,6 +5,8 @@
 
 #include <wsb/asio/executor.hpp>
 #include <wsb/asio/execution_context.hpp>
+#include <wsb/asio/detail/io_object_impl.hpp>
+#include <wsb/asio/detail/reactive_socket_service.hpp>
 
 namespace wsb {
 namespace asio {
@@ -21,7 +23,7 @@ public:
     }
 
 protected:
-    
+    detail::io_object_impl<detail::reactive_socket_service<Protocol>, Executor> impl_;
 };
 
 }

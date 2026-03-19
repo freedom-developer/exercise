@@ -5,6 +5,7 @@
 
 #include <wsb/asio/executor.hpp>
 #include <wsb/asio/execution_context.hpp>
+#include <wsb/asio/basic_socket.hpp>
 
 namespace wsb {
 namespace asio {
