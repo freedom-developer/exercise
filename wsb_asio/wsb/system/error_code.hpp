@@ -12,22 +12,23 @@ namespace system {
 class error_code : public std::exception 
 {
 public:
-    error_code(): err_code(0), err_msg("") {}
-    error_code(int code) : err_code(code) { what(); }
+    error_code(): code_(0), msg_("") {}
+    error_code(int code) : code_(code) { what(); }
+    error_code(int code, const std::string& msg) : code_(code), msg_(msg) {}
     const char *what() const throw()
     {
-        if (err_msg.empty() && err_code != 0) {
+        if (msg_.empty() && code_ != 0) {
             char buf[1024] = { 0 };
-            strerror_r(err_code, buf, sizeof(buf));
-            err_msg = buf;
+            strerror_r(code_, buf, sizeof(buf));
+            msg_ = buf;
         }
 
-        return err_msg.c_str();
+        return msg_.c_str();
     }
 
 private:
-    int err_code;
-    mutable std::string err_msg;
+    int code_;
+    mutable std::string msg_;
 };
 
 }

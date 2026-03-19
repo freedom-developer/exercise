@@ -12,7 +12,7 @@ class TcpClient
 {
 public:
     TcpClient(io_context &ioc)
-        // : sock_(ioc)
+        : sock_(ioc)
     {
         // tcp::endpoint ep(make_address(ip_str), port);
         // sock_.async_connect(ep, [this](const boost::system::error_code &ec) {
