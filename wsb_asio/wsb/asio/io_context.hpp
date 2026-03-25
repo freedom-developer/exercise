@@ -16,10 +16,15 @@ public:
         return 0;
     }
 
+private:
+    template <typename Service>
+    friend Service& use_service(io_context& ioc);
 };
 
 }
 }
 
+
+#include <wsb/asio/impl/io_context.hpp>
 
 #endif

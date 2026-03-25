@@ -11,10 +11,12 @@
 namespace wsb {
 namespace asio {
 
+// Protocol = tcp, Executor = executor
 template <typename Protocol, typename Executor = executor>
 class basic_socket
 {
 public:
+    // ExecutionContext = io_context : public execution_context
     template <typename ExecutionContext>
     explicit basic_socket(ExecutionContext& context,
         typename std::enable_if<std::is_convertible<ExecutionContext&, execution_context&>::value>::type* = 0)
