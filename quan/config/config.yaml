@@ -1,0 +1,23 @@
+# 量化交易系统配置
+
+data:
+  provider: akshare          # 数据源: akshare | tushare
+  cache_dir: ./data_cache    # 本地数据缓存目录
+  default_adjust: qfq        # 复权方式: qfq(前复权) | hfq(后复权) | none
+
+backtest:
+  initial_capital: 1000000.0 # 初始资金（元）
+  commission_rate: 0.0003    # 手续费率（万三）
+  stamp_duty: 0.001          # 印花税（卖出千一，仅A股）
+  slippage: 0.0002           # 滑点
+
+risk:
+  max_position_ratio: 0.2    # 单标的最大仓位比例
+  max_drawdown_limit: 0.15   # 最大回撤熔断线（超过则停止交易）
+  stop_loss_ratio: 0.05      # 止损比例
+
+strategy:
+  default: ma_cross          # 默认策略
+
+logging:
+  level: INFO

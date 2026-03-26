@@ -1,0 +1,4 @@
+CompileFlags:
+  Add:
+    - "-I/root/docu/asio/exercise/wsb_asio"
+    - "-std=c++17"
