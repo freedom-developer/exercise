@@ -55,8 +55,6 @@ class DataFeed:
         for n in [5, 10, 20, 30, 60]:
             self.df[f"ma{n}"] = c.rolling(n).mean()
 
-        print(self.df)
-
         # EMA
         for n in [12, 26]:
             self.df[f"ema{n}"] = c.ewm(span=n, adjust=False).mean()

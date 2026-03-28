@@ -48,20 +48,22 @@ class MACrossStrategy(BaseStrategy):
 
         if self._prev_fast is not None and self._prev_slow is not None:
             # 金叉：快线从下方穿过慢线
+            # 短期内上涨可能性增加
             if self._prev_fast <= self._prev_slow and curr_fast > curr_slow:
                 signal = Signal(
                     type=SignalType.BUY,
                     symbol=bar.symbol,
-                    price=bar.close,
+                    price=bar.close,    # 每日收盘价
                     reason=f"MA金叉: MA{self.fast}={curr_fast:.2f} 上穿 MA{self.slow}={curr_slow:.2f}",
                     date=bar.date,
                 )
             # 死叉：快线从上方穿过慢线
+            # 短期内下跌可能性增加
             elif self._prev_fast >= self._prev_slow and curr_fast < curr_slow:
                 signal = Signal(
                     type=SignalType.SELL,
                     symbol=bar.symbol,
-                    price=bar.close,
+                    price=bar.close,    # 每日收盘价
                     reason=f"MA死叉: MA{self.fast}={curr_fast:.2f} 下穿 MA{self.slow}={curr_slow:.2f}",
                     date=bar.date,
                 )

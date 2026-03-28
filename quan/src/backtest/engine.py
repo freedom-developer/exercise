@@ -72,7 +72,7 @@ class BacktestEngine:
                 self.broker.snapshot(bar.date, {bar.symbol: bar.close})
                 continue
 
-            # 1. 止损检查
+            # 1. 止损检查：检查 （入场价 - 当前价）/ 入场价 > 止损点时，全量清仓
             if self.risk.check_stop_loss(bar.symbol, bar.close):
                 qty = self.broker.positions.get(bar.symbol, 0)
                 if qty > 0:
@@ -84,7 +84,7 @@ class BacktestEngine:
 
             # 3. 风控 + 执行
             if signal is not None and signal.type != SignalType.HOLD:
-                equity = self._current_equity(bar.close)
+                equity = self._current_equity(bar.close)    # 当前收盘坐计算的仓位值 + 现金
                 passed, quantity, reason = self.risk.check_signal(
                     signal=signal,
                     total_equity=equity,

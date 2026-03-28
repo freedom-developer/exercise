@@ -33,21 +33,21 @@ class SimBroker:
 
     def __init__(
         self,
-        initial_capital: float = 1_000_000.0,
-        commission_rate: float = 0.0003,
-        stamp_duty: float = 0.001,
-        slippage: float = 0.0002,
+        initial_capital: float = 1_000_000.0, # 初始资本
+        commission_rate: float = 0.0003,    # 佣金率
+        stamp_duty: float = 0.001,  # 印花税
+        slippage: float = 0.0002,   # 滑点，指预期成交价格与实际成交价格的差异
     ):
-        self.initial_capital = initial_capital
-        self.commission_rate = commission_rate
-        self.stamp_duty = stamp_duty
-        self.slippage = slippage
+        self.initial_capital = initial_capital  # 初始资本
+        self.commission_rate = commission_rate  # 佣金率
+        self.stamp_duty = stamp_duty    # 印花税
+        self.slippage = slippage    # 滑点，指预期成交价格与实际成交价格的差异
 
         # 账户状态
-        self.cash: float = initial_capital
-        self.positions: Dict[str, float] = {}           # symbol -> quantity
-        self.cost_prices: Dict[str, float] = {}         # symbol -> avg_cost
-        self.trades: List[Trade] = []
+        self.cash: float = initial_capital      # 现金
+        self.positions: Dict[str, float] = {}           # 仓位：[symbol] = quantity
+        self.cost_prices: Dict[str, float] = {}         # 仓位的成本价格: [symbol] = avg_cost
+        self.trades: List[Trade] = []       # 交易记录
 
         # 净值序列（每日记录）
         self.equity_curve: List[dict] = []
@@ -57,10 +57,10 @@ class SimBroker:
     # ------------------------------------------------------------------
 
     def execute_buy(self, date: pd.Timestamp, symbol: str, quantity: float, price: float) -> bool:
-        fill_price = price * (1 + self.slippage)
-        amount = fill_price * quantity
-        commission = max(amount * self.commission_rate, 5.0)
-        total_cost = amount + commission
+        fill_price = price * (1 + self.slippage)    # 实际成交价格
+        amount = fill_price * quantity  # 成交金额
+        commission = max(amount * self.commission_rate, 5.0) # 佣金
+        total_cost = amount + commission # 成交的总成本
 
         if self.cash < total_cost:
             logger.debug(f"{date} 买入 {symbol} 资金不足")
@@ -72,7 +72,10 @@ class SimBroker:
         old_qty = self.positions.get(symbol, 0)
         old_cost = self.cost_prices.get(symbol, 0)
         new_qty = old_qty + quantity
-        new_cost = (old_qty * old_cost + quantity * fill_price) / new_qty
+
+        # 成本价含买入佣金（摊销到每股），使卖出时 pnl 计算准确
+        new_cost = (old_qty * old_cost + quantity * fill_price + commission) / new_qty
+        
         self.positions[symbol] = new_qty
         self.cost_prices[symbol] = new_cost
 
@@ -96,7 +99,7 @@ class SimBroker:
         tax = amount * self.stamp_duty
         net_amount = amount - commission - tax
 
-        # 计算盈亏
+        # 计算盈亏：cost 已含买入佣金（摊销），此处再减去卖出佣金和印花税
         cost = self.cost_prices.get(symbol, fill_price)
         pnl = (fill_price - cost) * quantity - commission - tax
 
@@ -122,14 +125,15 @@ class SimBroker:
 
     def snapshot(self, date: pd.Timestamp, prices: Dict[str, float]):
         """记录当日净值"""
+        # 股票市值 = 股票市场值
         mv = sum(self.positions.get(s, 0) * p for s, p in prices.items())
-        equity = self.cash + mv
+        equity = self.cash + mv # 净值 = 股票市值 + 现金
         self.equity_curve.append({
             "date": date,
             "cash": self.cash,
             "market_value": mv,
-            "equity": equity,
-            "return": (equity - self.initial_capital) / self.initial_capital,
+            "equity": equity,   
+            "return": (equity - self.initial_capital) / self.initial_capital, # 回报率
         })
 
     def get_equity_df(self) -> pd.DataFrame:
@@ -137,7 +141,7 @@ class SimBroker:
         if df.empty:
             return df
         df = df.set_index("date")
-        df["daily_return"] = df["equity"].pct_change()
+        df["daily_return"] = df["equity"].pct_change() # 每日回报 = 相邻现行的百分比变化
         return df
 
     @property

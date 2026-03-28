@@ -25,16 +25,19 @@ class PerformanceMetrics:
         if df.empty or "equity" not in df.columns:
             return {}
 
+        with pd.option_context('display.max_rows', None):
+            print(df)
+
         equity = df["equity"]
         daily_ret = df["daily_return"].dropna()
 
-        # 基础指标
+        # 基础指标：总收益率，年化收益率
         total_return = (equity.iloc[-1] - equity.iloc[0]) / equity.iloc[0]
         n_days = (df.index[-1] - df.index[0]).days
         n_years = n_days / 365.0
         annual_return = (1 + total_return) ** (1 / n_years) - 1 if n_years > 0 else 0
 
-        # 波动率
+        # 波动率：n 天的标准差 = 单日标准差 × √n，一年只有252的交易日，此处计算的是年化波动率
         annual_vol = daily_ret.std() * np.sqrt(252)
 
         # Sharpe

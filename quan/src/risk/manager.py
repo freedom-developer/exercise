@@ -23,17 +23,17 @@ class RiskManager:
 
     def __init__(
         self,
-        max_position_ratio: float = 0.2,
-        max_drawdown_limit: float = 0.15,
-        stop_loss_ratio: float = 0.05,
+        max_position_ratio: float = 0.2,    # 最大仓位比
+        max_drawdown_limit: float = 0.15,   # 最大回撤限制
+        stop_loss_ratio: float = 0.05,      # 止损比例
     ):
-        self.max_position_ratio = max_position_ratio    # 单标的最大仓位
+        self.max_position_ratio = max_position_ratio    # 单标的最大仓位：一只股票所占金额 / 总金额 <= max_position_ratio
         self.max_drawdown_limit = max_drawdown_limit    # 最大回撤熔断
         self.stop_loss_ratio = stop_loss_ratio          # 止损比例
 
-        self._peak_equity: float = 0.0
+        self._peak_equity: float = 0.0                  # 历史最高净值
         self._is_halted: bool = False                   # 熔断状态
-        self._entry_prices: dict = {}                   # 各标的建仓均价
+        self._entry_prices: dict = {}                   # 各标的建仓均价：市场坐
 
     # ------------------------------------------------------------------
     # 主入口：校验信号并计算下单数量
@@ -87,13 +87,13 @@ class RiskManager:
             return False, 0, f"可用资金不足: {available:.0f} < {price * 100:.0f}"
 
         # 计算下单数量（A股：100股为最小单位）
-        raw_qty = available / price
-        quantity = int(raw_qty / 100) * 100
+        raw_qty = available / price  # 此为收盘价格，而未考虑滑点，即非真实成交价格
+        quantity = int(raw_qty / 100) * 100 # 多少份股票
 
         if quantity <= 0:
             return False, 0, "计算数量为0"
 
-        self._entry_prices[signal.symbol] = price
+        self._entry_prices[signal.symbol] = price  # 股票的市场坐（收盘价）
         return True, quantity, ""
 
     def _check_sell(
@@ -114,6 +114,7 @@ class RiskManager:
 
     # ------------------------------------------------------------------
     # 回撤熔断
+    #   回搞：从某个历史最高净值下跌的幅度
     # ------------------------------------------------------------------
 
     def update_equity(self, equity: float):
